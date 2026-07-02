@@ -1,0 +1,49 @@
+<div class="summary-cards">
+    <div class="card card-income">
+        <span class="card-label">Income</span>
+        <span class="card-amount">■{{this.income}}</span>
+    </div>
+    <div class="card card-expense">
+        <span class="card-label">Expense</span>
+        <span class="card-amount">■{{this.expense}}</span>
+    </div>
+    <div class="card card-balance">
+        <span class="card-label">Balance</span>
+        <span class="card-amount">■{{this.balance}}</span>
+    </div>
+</div>
+<div class="charts-row">
+    <div class="chart-card">
+        <h3>Spending by Category</h3>
+        {{#if this.categories.length}}
+        <div class="category-bars">
+            {{#each this.categories as |cat|}}
+            <div class="bar-item">
+                <span class="bar-label">{{cat.category}}</span>
+                <div class="bar-track">
+                    <div class="bar-fill" ></div>
+                </div>
+                <span class="bar-value">■{{cat.total}}</span>
+            </div>
+            {{/each}}
+        </div>
+        {{else}}
+        <p class="empty">No expenses this month</p>
+        {{/if}}
+    </div>
+    <div class="chart-card">
+        <h3>Daily Spending</h3>
+        {{#if this.daily.length}}
+            <div class="daily-bars">
+                {{#each this.daily as |day|}}
+                <div class="daily-bar">
+                <div class="daily-fill" ></div>
+                <span class="daily-label">{{day.date}}</span>
+                </div>
+                {{/each}}
+            </div>
+        {{else}}
+        <p class="empty">No daily data</p>
+        {{/if}}
+    </div>
+</div>

@@ -1,0 +1,8 @@
+.form-group { margin-bottom: 16px;
+    label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; color: $dark; } }
+    .form-input { width: 100%; padding: 10px 14px; border: 1px solid $border;
+    border-radius: $radius; font-size: 14px; outline: none;
+    &:focus { border-color: $primary; box-shadow: 0 0 0 3px rgba($primary, 0.15); } }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-inline { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+    .input-sm { max-width: 93%; } .input-color { max-width: 50px; height: 40px; padding: 2px; }

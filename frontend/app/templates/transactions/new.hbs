@@ -1,0 +1,9 @@
+<div class="modal-overlay">
+    <div class="modal">
+        <div class="modal-header">
+        <h2>Add Transaction</h2>
+        <LinkTo @route="transactions" class="modal-close">&times;</LinkTo>
+        </div>
+        <TransactionForm @categories={{@model}} />
+    </div>
+</div>

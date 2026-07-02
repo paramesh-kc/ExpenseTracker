@@ -1,0 +1,12 @@
+<div class="page-header">
+    <h1>Dashboard</h1>
+    {{!-- <p class="subtitle">Welcome back, {{this.auth.name}}</p> --}}
+    <div class="dashboard-filters">
+        <select id="monthselect" aria-label="monthselect" class="form-input" {{on "change" this.onMonthChange}}>
+            {{#each this.monthsList as |month|}}
+                <option value={{month.value}} selected={{eq this.selectedMonth month.value}}>{{month.label}}</option>
+            {{/each}}
+        </select>
+    </div>
+</div>
+<DashboardSummary @data={{this.currentData}} />

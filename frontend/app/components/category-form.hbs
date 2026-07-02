@@ -1,0 +1,32 @@
+<div class="category-form-card">
+  <h3>Add New Category</h3>
+
+  {{#if this.error}}
+    <div class="alert alert-error">{{this.error}}</div>
+  {{/if}}
+
+  <form {{on "submit" this.handleSubmit}} class="form form-inline">
+    <input type="text" value={{this.name}} {{on "input" this.updateName}}
+      placeholder="Category name" class="form-input" required />
+
+    <select class="form-input input-sm" {{on "change" this.updateIcon}}>
+      {{#each this.iconOptions as |opt|}}
+        <option value={{opt.label}} selected={{eq this.icon opt.label}}>
+          {{opt.value}} {{opt.label}}
+        </option>
+      {{/each}}
+    </select>
+
+    <input type="color" value={{this.color}} {{on "input" this.updateColor}}
+      class="form-input input-color" />
+
+    <select class="form-input" {{on "change" this.updateType}}>
+      <option value="EXPENSE" selected={{eq this.type "EXPENSE"}}>Expense</option>
+      <option value="INCOME" selected={{eq this.type "INCOME"}}>Income</option>
+    </select>
+
+    <button type="submit" class="btn btn-primary" disabled={{this.isLoading}}>
+      {{if this.isLoading "Adding..." "Add"}}
+    </button>
+  </form>
+</div>

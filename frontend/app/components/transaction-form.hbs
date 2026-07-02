@@ -1,0 +1,55 @@
+{{#if this.error}}
+    <div class="alert alert-error">{{this.error}}</div>
+{{/if}}
+<form {{on "submit" this.handleSubmit}} class="form">
+    <div class="form-row">
+        <div class="form-group">
+            <label for="formtypeselec">Type</label>
+            <select id="formtypeselec" class="form-input" {{on "change" this.updateType}}>
+                <option value="EXPENSE" selected={{eq this.type "EXPENSE"}}>Expense</option>
+                <option value="INCOME" selected={{eq this.type "INCOME"}}>Income</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <div class="form-group">
+                <label for="formcategoryselect">Category</label>
+                <select id="formcategoryselect" class="form-input" {{on "change" this.updateCategory}} required>
+                    <option value="">Select category</option>
+                    {{#each this.filteredCategories as |cat|}}
+                    <option value={{cat.id}}>{{cat.icon}} {{cat.name}}</option>
+                    {{/each}}
+                </select>
+            </div>
+
+           
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+             <label for="amountinput">Amount (■)</label>
+            <input id="amountinput" type="number" step="0.01" value={{this.amount}}
+            {{on "input" this.updateAmount}} class="form-input" required />
+            {{!-- <label for="formcategoryselect">Category</label>
+            <select id="formcategoryselect" class="form-input" {{on "change" this.updateCategory}} required>
+                <option value="">Select category</option>
+                {{#each this.filteredCategories as |cat|}}
+                <option value={{cat.id}}>{{cat.icon}} {{cat.name}}</option>
+                {{/each}}
+            </select> --}}
+        </div>
+        <div class="form-group">
+            <label for="dateinput">Date</label>
+            <input id="dateinput" type="date" value={{this.date}}
+            {{on "input" this.updateDate}} class="form-input" required />
+        </div>
+    </div>
+    <div class="form-group">
+        <label for="noteinput">Note</label>
+        <input id="noteinput" type="text" value={{this.note}} {{on "input" this.updateNote}}
+        placeholder="What was this for?" class="form-input" />
+    </div>
+    <button type="submit" class="btn btn-primary btn-block"
+    disabled={{this.isLoading}}>
+        {{if this.isLoading "Saving..." "Save Transaction"}}
+    </button>
+</form>

@@ -1,0 +1,6 @@
+{{#if this.auth.isAuthenticated}}
+<NavBar />
+{{/if}}
+<main class="main-content {{unless this.auth.isAuthenticated 'auth-page'}}">
+    {{outlet}}
+</main>

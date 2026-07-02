@@ -1,0 +1,26 @@
+{{#if this.transactions.length}}
+    <div class="transaction-table">
+        <div class="table-header">
+            <span>Date</span><span>Category</span><span>Note</span>
+            <span>Amount</span><span>Actions</span>
+        </div>
+        {{#each this.transactions as |txn|}}
+        <div class="table-row {{if (eq txn.type 'INCOME') 'row-income' 'row-expense'}}">
+            <span>{{txn.date}}</span>
+            <span>{{txn.categoryName}}</span>
+            <span>{{txn.note}}</span>
+            <span class="amount">
+            {{if (eq txn.type 'INCOME') '+' '-'}}■{{txn.amount}}
+            </span>
+            <span>
+            <button type="button" class="btn btn-sm btn-danger"
+            {{on "click" (fn this.deleteTransaction txn.id)}}>Delete</button>
+            </span>
+        </div>
+        {{/each}}
+    </div>
+    {{else}}
+    <div class="empty-state">
+        <p>No transactions yet. Add your first one!</p>
+    </div>
+{{/if}}

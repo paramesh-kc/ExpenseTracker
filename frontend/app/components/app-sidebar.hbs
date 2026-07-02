@@ -1,0 +1,29 @@
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <i class="ti ti-wallet"></i>
+    <span>Expense tracker</span>
+  </div>
+
+  <LinkTo @route="dashboard" class="sidebar-nav-btn" activeClass="active">
+    <i class="ti ti-layout-dashboard"></i>Dashboard
+  </LinkTo>
+  <LinkTo @route="transactions" class="sidebar-nav-btn" activeClass="active">
+    <i class="ti ti-arrows-exchange"></i>Transactions
+  </LinkTo>
+  <LinkTo @route="categories" class="sidebar-nav-btn" activeClass="active">
+    <i class="ti ti-tags"></i>Categories
+  </LinkTo>
+
+  <div class="sidebar-user">
+    <div class="sidebar-user-row">
+      <div class="sidebar-avatar">{{this.initials}}</div>
+      <div class="sidebar-user-info">
+        <p class="sidebar-user-name">{{this.auth.user.name}}</p>
+        <p class="sidebar-user-email">{{this.auth.user.email}}</p>
+      </div>
+    </div>
+    <button type="button" class="sidebar-nav-btn" {{on "click" this.auth.logout}}>
+      <i class="ti ti-logout"></i>Log out
+    </button>
+  </div>
+</div>

@@ -51,7 +51,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200","https://expensetracker-production-05b2.up.railway.app"));
+        config.setAllowedOrigins(List.of("http://localhost:4200","https://expensetracker-production-05b2.up.railway.app", "https://zexpensetrack.up.railway.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);        // IMPORTANT: allows cookies!

@@ -5,4 +5,4 @@ nixPkgs = ["jdk17"]
 cmds = ["cd backend && ./gradlew build -x test"]
 
 [start]
-cmd = "cd backend && java -jar backend/build/libs/backend-1.0.0.jar"
+cmd = "java -jar backend/build/libs/backend-1.0.0.jar"

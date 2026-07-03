@@ -31,7 +31,7 @@ export default class LoginController extends Controller {
 
     try {
       const json = await this.store.ajax(
-        'http://localhost:8080/api/auth/login',
+        `${ENV.APP.API_HOST}/api/auth/login`,
         {
           type: 'POST',
           contentType: 'application/json',

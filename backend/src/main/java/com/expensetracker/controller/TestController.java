@@ -10,11 +10,6 @@ import java.util.Map;
 @RestController
 public class TestController {
 
-    @GetMapping("/")
-    public String start() {
-        return "Welcome to the Expense Tracker API!";
-    }
-
     @GetMapping("/api/test")
     public Map<String, String> hello() {
         return Map.of(

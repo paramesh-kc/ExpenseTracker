@@ -70,7 +70,7 @@ export default class TransactionsController extends Controller {
 
     try {
       const created = await this.store.ajax(
-        `http://localhost:8080/api/transactions?userId=${this.userId}`,
+        `${ENV.APP.API_HOST}/api/transactions?userId=${this.userId}`,
         {
           type: 'POST',
           contentType: 'application/json',
@@ -102,7 +102,7 @@ export default class TransactionsController extends Controller {
   async deleteTransaction(transaction) {
     try {
       await this.store.ajax(
-        `http://localhost:8080/api/transactions/${transaction.id}?userId=${this.userId}`,
+        `${ENV.APP.API_HOST}/api/transactions/${transaction.id}?userId=${this.userId}`,
         { type: 'DELETE' }
       );
       this.localTransactions = this.transactionsList.filter((t) => t.id !== transaction.id);

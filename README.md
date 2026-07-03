@@ -4,6 +4,10 @@ A full-stack personal expense tracking application built with **Spring Boot** an
 
 Track income, expenses, set monthly budgets, and visualize spending patterns with category-based analytics and daily charts.
 
+> **One command to run everything** — the Ember frontend is built into the Spring Boot server. Start the backend and open `http://localhost:8080` to use the full app — no separate frontend server needed.
+
+---
+
 ## 🛠 Tech Stack
 
 ### Backend
@@ -11,139 +15,145 @@ Track income, expenses, set monthly budgets, and visualize spending patterns wit
 - **Spring Boot 3.5** — REST API framework
 - **Spring Data JPA** — ORM with Hibernate
 - **Spring Security** — Authentication & authorization
-- **JWT (JSON Web Token)** — Stateless authentication
+- **JWT (JSON Web Token)** — Stateless authentication via HttpOnly cookies
+- **BCrypt** — Password hashing
 - **MySQL 8** — Relational database
 - **Gradle** — Build tool
 - **JUnit 5 + MockMvc** — Integration testing
 
 ### Frontend
-- **Ember.js (Octane)** — SPA framework
-- **Ember Data** — Data management
-- **Handlebars** — Templating engine
+- **Ember.js (Octane)** — Single Page Application framework
+- **Ember Data** — Data management via `this.store`
+- **Handlebars (.hbs)** — Templating engine
+- **ember-pikaday** — Date/month picker
+- **SCSS** — Styling
+
+---
 
 ## 📋 Features
 
-- **User Authentication** — Register, login with JWT tokens, BCrypt password hashing
-- **Expense & Income Tracking** — Add, edit, delete transactions with categories
+- **User Authentication** — Register and login with JWT tokens stored as HttpOnly cookies
+- **Expense & Income Tracking** — Add and delete transactions with categories
 - **Category Management** — Create custom categories with icons and colors
 - **Dashboard Analytics** — Monthly summary with total income, expense, and balance
-- **Spending by Category** — Category-wise expense breakdown (pie chart data)
-- **Daily Spending Trend** — Day-by-day expense data (bar chart data)
-- **Date Range Filtering** — Filter transactions by custom date ranges
+- **Month Filter** — Switch between months to view historical data
+- **Spending by Category** — Category-wise expense breakdown with bar charts
+- **Daily Spending Trend** — Day-by-day expense visualization
 - **Budget Management** — Set monthly budgets per category
 - **Input Validation** — Server-side validation with meaningful error messages
-- **Global Exception Handling** — Clean JSON error responses for all error types
+- **Global Exception Handling** — Clean JSON error responses
+
+---
 
 ## 🏗 Architecture
 
 ```
-HTTP Request (Postman / Ember.js / Browser)
+Browser (localhost:8080)
          │
          ▼
-┌─────────────────────────┐
-│  Controller Layer        │   Handles HTTP requests & responses
-│  (REST API endpoints)    │   @RestController, @GetMapping, @PostMapping
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  Service Layer           │   Business logic & validation
-│  (Business Logic)        │   @Service, @Transactional
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  Repository Layer        │   Database operations (auto-generated SQL)
-│  (Data Access)           │   JpaRepository, @Query (JPQL)
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  MySQL Database          │   Persistent storage
-│  (InnoDB Engine)         │   Auto-created tables via Hibernate
-└─────────────────────────┘
+┌─────────────────────────────────────────┐
+│           Spring Boot Server            │
+│                                         │
+│  GET /          → serves index.html     │  ← Ember SPA boots here
+│  GET /assets/*  → serves JS/CSS bundles │
+│  POST /api/auth/login   ┐               │
+│  GET  /api/transactions ├─ REST API     │
+│  GET  /api/dashboard    ┘               │
+└────────────────┬────────────────────────┘
+                 │
+                 ▼
+        ┌────────────────┐
+        │   MySQL 8      │
+        │  (local/cloud) │
+        └────────────────┘
 ```
+
+### How the frontend is served
+
+The Ember app is compiled into static files (`index.html` + `assets/`) and placed inside Spring Boot's `src/main/resources/static/` directory. Spring Boot automatically serves these files — no separate frontend server or Node.js process is needed in production.
+
+Hash-based routing (`locationType: 'hash'`) is used so all Ember routes (e.g. `/#/dashboard`, `/#/transactions`) resolve to `/` on the server — Spring Boot always serves `index.html` and Ember handles the rest client-side.
+
+---
 
 ## 📁 Project Structure
 
 ```
-expense-tracker/
-├── backend/                          # Spring Boot application
-│   ├── build.gradle                  # Dependencies & build config
+Spring_Expense_Tracker/
+├── backend/                              # Spring Boot application
+│   ├── build.gradle
 │   ├── src/main/java/com/expensetracker/
-│   │   ├── BackendApplication.java   # Entry point (@SpringBootApplication)
+│   │   ├── BackendApplication.java       # Entry point
 │   │   ├── config/
-│   │   │   └── SecurityConfig.java   # Spring Security + BCrypt config
+│   │   │   ├── SecurityConfig.java       # Spring Security + CORS + JWT filter
+│   │   │   ├── JwtAuthFilter.java        # JWT cookie validation per request
+│   │   │   └── JwtProperties.java        # JWT config properties
 │   │   ├── controller/
-│   │   │   ├── AuthController.java           # POST /api/auth/register, /login
-│   │   │   ├── CategoryController.java       # CRUD /api/categories
-│   │   │   ├── TransactionController.java    # CRUD /api/transactions
-│   │   │   └── DashboardController.java      # GET /api/dashboard/summary
+│   │   │   ├── AuthController.java       # POST /api/auth/register, /login, /logout
+│   │   │   ├── CategoryController.java   # CRUD /api/categories
+│   │   │   ├── TransactionController.java# CRUD /api/transactions
+│   │   │   └── DashboardController.java  # GET /api/dashboard/summary
 │   │   ├── service/
-│   │   │   ├── AuthService.java              # Registration + login logic
-│   │   │   ├── CategoryService.java          # Category CRUD logic
-│   │   │   ├── TransactionService.java       # Transaction CRUD logic
-│   │   │   └── DashboardService.java         # Analytics (SUM, GROUP BY)
+│   │   │   ├── AuthService.java
+│   │   │   ├── CategoryService.java
+│   │   │   ├── TransactionService.java
+│   │   │   └── DashboardService.java
 │   │   ├── repository/
-│   │   │   ├── UserRepository.java           # User queries
-│   │   │   ├── CategoryRepository.java       # Category queries
-│   │   │   ├── TransactionRepository.java    # Transaction queries + custom JPQL
-│   │   │   └── BudgetRepository.java         # Budget queries
+│   │   │   ├── UserRepository.java
+│   │   │   ├── CategoryRepository.java
+│   │   │   ├── TransactionRepository.java
+│   │   │   └── BudgetRepository.java
 │   │   ├── model/
-│   │   │   ├── User.java                     # users table
-│   │   │   ├── Category.java                 # categories table
-│   │   │   ├── Transaction.java              # transactions table
-│   │   │   ├── Budget.java                   # budgets table
-│   │   │   └── TransactionType.java          # INCOME / EXPENSE enum
+│   │   │   ├── User.java
+│   │   │   ├── Category.java
+│   │   │   ├── Transaction.java
+│   │   │   ├── Budget.java
+│   │   │   └── TransactionType.java      # INCOME / EXPENSE enum
 │   │   ├── dto/
-│   │   │   ├── RegisterRequest.java          # Registration input + validation
-│   │   │   ├── LoginRequest.java             # Login input + validation
-│   │   │   ├── AuthResponse.java             # Auth response (token + user)
-│   │   │   ├── CategoryDTO.java              # Category input + validation
-│   │   │   ├── TransactionDTO.java           # Transaction input + validation
-│   │   │   ├── BudgetDTO.java                # Budget input + validation
-│   │   │   └── DashboardDTO.java             # Dashboard response
+│   │   │   ├── RegisterRequest.java
+│   │   │   ├── LoginRequest.java
+│   │   │   ├── CategoryDTO.java
+│   │   │   ├── TransactionDTO.java
+│   │   │   ├── BudgetDTO.java
+│   │   │   └── DashboardDTO.java
 │   │   └── exception/
-│   │       ├── ResourceNotFoundException.java    # 404 errors
-│   │       ├── BadRequestException.java          # 400 errors
-│   │       └── GlobalExceptionHandler.java       # Central error handler
-│   ├── src/main/resources/
-│   │   └── application.properties    # MySQL, JPA, JWT, logging config
-│   └── src/test/java/com/expensetracker/
-│       ├── TestCleanup.java          # Database cleanup between tests
-│       └── controller/
-│           ├── AuthControllerTest.java
-│           ├── CategoryControllerTest.java
-│           ├── TransactionControllerTest.java
-│           └── DashboardControllerTest.java
-└── frontend/                         # Ember.js application (coming soon)
+│   │       ├── ResourceNotFoundException.java
+│   │       ├── BadRequestException.java
+│   │       └── GlobalExceptionHandler.java
+│   └── src/main/resources/
+│       ├── application.properties
+│       └── static/                       # ← Ember production build lives here
+│           ├── index.html
+│           └── assets/
+│               ├── frontend.js
+│               ├── frontend.css
+│               ├── vendor.js
+│               └── vendor.css
+│
+└── frontend/                             # Ember.js application
+    ├── app/
+    │   ├── routes/
+    │   │   ├── index.js                  # Redirects to login or dashboard
+    │   │   ├── login.js
+    │   │   ├── register.js
+    │   │   ├── dashboard.js
+    │   │   ├── transactions.js
+    │   │   └── categories.js
+    │   ├── controllers/
+    │   ├── templates/
+    │   ├── components/
+    │   │   ├── app-sidebar.js/.hbs
+    │   │   └── dashboard-summary.js/.hbs
+    │   └── services/
+    │       ├── api.js                    # All API calls via this.store.ajax()
+    │       ├── auth.js                   # Session state + login/logout
+    │       └── store.js                  # Extended store with ajax() method
+    ├── config/
+    │   └── environment.js                # API_HOST per environment
+    └── ember-cli-build.js
 ```
 
-## 🗄 Database Schema
-
-```sql
-┌──────────────┐       ┌──────────────────┐       ┌──────────────────┐
-│    users     │       │   categories     │       │   transactions   │
-├──────────────┤       ├──────────────────┤       ├──────────────────┤
-│ id (PK)      │◄──┐   │ id (PK)          │◄──┐   │ id (PK)          │
-│ name         │   │   │ name             │   │   │ amount           │
-│ email (UQ)   │   │   │ icon             │   │   │ type (ENUM)      │
-│ password     │   │   │ color            │   │   │ note             │
-│ created_at   │   │   │ type (ENUM)      │   │   │ date             │
-└──────────────┘   │   │ user_id (FK) ────┘   │   │ category_id (FK)─┘
-                   │   └──────────────────┘   │   │ user_id (FK) ────┐
-                   │                           │   │ created_at       │
-                   │   ┌──────────────────┐   │   └──────────────────┘
-                   │   │    budgets       │   │
-                   │   ├──────────────────┤   │
-                   │   │ id (PK)          │   │
-                   │   │ monthly_limit    │   │
-                   │   │ month            │   │
-                   │   │ year             │   │
-                   └───│ user_id (FK)     │   │
-                       │ category_id (FK)─┘   │
-                       └──────────────────┘
-```
+---
 
 ## 🚀 Getting Started
 
@@ -151,56 +161,173 @@ expense-tracker/
 
 - Java 17+
 - MySQL 8+
-- Node.js 18+ (for frontend)
-- Ember CLI (for frontend)
+- Node.js 18+ (only needed to rebuild the frontend)
+- Ember CLI (only needed to rebuild the frontend)
 
-### Backend Setup
+### 1. Clone the repository
 
 ```bash
-# 1. Clone the repository
 git clone https://github.com/YOUR_USERNAME/expense-tracker.git
-cd expense-tracker/backend
+cd expense-tracker
+```
 
-# 2. Start MySQL and create database (auto-created on first run)
-mysql -u root -e "SELECT 1;"   # verify MySQL is running
+### 2. Create the MySQL database
 
-# 3. Run the application
+```bash
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS expense_tracker;"
+```
+
+Or run the full schema manually:
+
+```sql
+USE expense_tracker;
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at DATETIME(6),
+    PRIMARY KEY (id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS categories (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(50) NOT NULL,
+    icon VARCHAR(20),
+    color VARCHAR(7),
+    type ENUM('INCOME','EXPENSE') NOT NULL,
+    user_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS transactions (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    amount FLOAT(53) NOT NULL,
+    type ENUM('INCOME','EXPENSE') NOT NULL,
+    note VARCHAR(255),
+    date DATE NOT NULL,
+    category_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    created_at DATETIME(6),
+    PRIMARY KEY (id),
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS budgets (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    monthly_limit FLOAT(53) NOT NULL,
+    month INTEGER NOT NULL,
+    year INTEGER NOT NULL,
+    category_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+) ENGINE=InnoDB;
+```
+
+### 3. Configure the database
+
+Edit `backend/src/main/resources/application.properties`:
+
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/expense_tracker
+spring.datasource.username=root
+spring.datasource.password=your_password
+```
+
+### 4. Start the server
+
+```bash
+cd backend
+./gradlew bootRun
+```
+
+### 5. Open the app
+
+```
+http://localhost:8080
+```
+
+The Ember frontend loads automatically — register a new account and start tracking.
+
+> The frontend is already built and bundled inside `backend/src/main/resources/static/`. No Node.js or Ember CLI needed just to run the app.
+
+---
+
+## 🔄 Rebuilding the Frontend
+
+Only needed if you make changes to the Ember source code.
+
+```bash
+# 1. Build Ember for production
+cd frontend
+ember build --environment=production
+
+# 2. Copy build output into Spring Boot's static folder
+cp -r dist/* ../backend/src/main/resources/static/
+
+# 3. Restart the backend
+cd ../backend
+./gradlew bootRun
+```
+
+### Development mode (frontend + backend separately)
+
+If you want live-reload while developing the Ember frontend:
+
+```bash
+# Terminal 1 — Spring Boot backend
+cd backend
 ./gradlew bootRun
 
-# Server starts at http://localhost:8080
+# Terminal 2 — Ember dev server
+cd frontend
+ember serve
 ```
 
-### Run Tests
+Then open `http://localhost:4200` — Ember proxies API calls to Spring Boot at `http://localhost:8080`.
 
-```bash
-# Run all 21 integration tests
-./gradlew test
+The `API_HOST` in `frontend/config/environment.js` controls this:
 
-# View HTML test report
-open build/reports/tests/test/index.html
+```js
+APP: {
+  API_HOST: 'http://localhost:8080',  // dev — separate servers
+},
+
+if (environment === 'production') {
+  ENV.APP.API_HOST = '';              // prod — same origin, relative URLs
+}
 ```
+
+---
 
 ## 📡 API Endpoints
 
 ### Authentication
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|:---:|
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|:----:|
 | POST | `/api/auth/register` | Register new user | No |
-| POST | `/api/auth/login` | Login (returns JWT) | No |
+| POST | `/api/auth/login` | Login, sets JWT cookie | No |
+| POST | `/api/auth/logout` | Logout, clears cookie | No |
+| GET | `/api/auth/me` | Get current user | Yes |
 
 ### Categories
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|:---:|
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|:----:|
 | GET | `/api/categories?userId={id}` | List all categories | Yes |
 | POST | `/api/categories?userId={id}` | Create category | Yes |
 | DELETE | `/api/categories/{id}?userId={id}` | Delete category | Yes |
 
 ### Transactions
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|:---:|
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|:----:|
 | GET | `/api/transactions?userId={id}` | List all transactions | Yes |
 | GET | `/api/transactions?userId={id}&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD` | Filter by date | Yes |
 | GET | `/api/transactions/{id}?userId={id}` | Get single transaction | Yes |
@@ -210,9 +337,11 @@ open build/reports/tests/test/index.html
 
 ### Dashboard
 
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|:---:|
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|:----:|
 | GET | `/api/dashboard/summary?userId={id}&month={M}&year={Y}` | Monthly summary | Yes |
+
+---
 
 ## 📝 API Usage Examples
 
@@ -226,27 +355,22 @@ curl -X POST http://localhost:8080/api/auth/register \
 
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1...",
+  "userId": 1,
   "name": "Alice",
-  "email": "alice@test.com"
+  "email": "alice@test.com",
+  "message": "Registered successfully"
 }
 ```
 
-### Create Category
+### Login
 
 ```bash
-curl -X POST "http://localhost:8080/api/categories?userId=1" \
+curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"name":"Food","icon":"🍔","color":"#FF5733","type":"EXPENSE"}'
+  -d '{"email":"alice@test.com","password":"password123"}'
 ```
 
-### Create Transaction
-
-```bash
-curl -X POST "http://localhost:8080/api/transactions?userId=1" \
-  -H "Content-Type: application/json" \
-  -d '{"amount":500,"type":"EXPENSE","note":"Lunch","date":"2025-07-15","categoryId":1}'
-```
+JWT token is returned as an **HttpOnly cookie** — not in the response body. This protects the token from JavaScript access (XSS protection).
 
 ### Dashboard Summary
 
@@ -261,70 +385,119 @@ curl "http://localhost:8080/api/dashboard/summary?userId=1&month=7&year=2025"
   "balance": 65850.0,
   "byCategory": [
     { "category": "Rent", "total": 15000.0 },
-    { "category": "Food", "total": 1300.0 },
-    { "category": "Transport", "total": 350.0 }
+    { "category": "Food", "total": 1300.0 }
   ],
   "dailyExpenses": [
     { "date": "2025-07-01", "total": 15000.0 },
-    { "date": "2025-07-10", "total": 800.0 },
     { "date": "2025-07-15", "total": 500.0 }
   ]
 }
 ```
 
+---
+
 ## ✅ Testing
 
-21 integration tests covering all API endpoints:
+```bash
+cd backend
+./gradlew test
+
+# View HTML report
+open build/reports/tests/test/index.html
+```
 
 | Test Class | Tests | Covers |
 |------------|:-----:|--------|
 | AuthControllerTest | 4 | Register, duplicate email, login, wrong password |
 | CategoryControllerTest | 5 | Create, validation, list, delete |
-| TransactionControllerTest | 8 | CRUD operations, validation, 404 handling |
+| TransactionControllerTest | 8 | CRUD, validation, 404 handling |
 | DashboardControllerTest | 3 | Monthly summary, empty month |
 
-```bash
-./gradlew test
-# 21 tests completed, 0 failed
+---
+
+## 🗄 Database Schema
+
+```
+┌──────────────┐       ┌──────────────────┐       ┌──────────────────┐
+│    users     │       │   categories     │       │   transactions   │
+├──────────────┤       ├──────────────────┤       ├──────────────────┤
+│ id (PK)      │◄──┐   │ id (PK)          │◄──┐   │ id (PK)          │
+│ name         │   │   │ name             │   │   │ amount           │
+│ email (UQ)   │   │   │ icon             │   │   │ type (ENUM)      │
+│ password     │   │   │ color            │   │   │ note             │
+│ created_at   │   │   │ type (ENUM)      │   │   │ date             │
+└──────────────┘   └───│ user_id (FK)     │   └───│ category_id (FK) │
+                       └──────────────────┘       │ user_id (FK)     │
+                                                  │ created_at       │
+                       ┌──────────────────┐       └──────────────────┘
+                       │    budgets       │
+                       ├──────────────────┤
+                       │ id (PK)          │
+                       │ monthly_limit    │
+                       │ month            │
+                       │ year             │
+                       │ user_id (FK)     │
+                       │ category_id (FK) │
+                       └──────────────────┘
 ```
 
-## 🔒 Security Features
+---
 
-- **BCrypt Password Hashing** — Passwords are never stored in plain text
-- **JWT Authentication** — Stateless token-based auth
-- **Input Validation** — Server-side validation using Jakarta Bean Validation
-- **SQL Injection Prevention** — JPA/Hibernate uses parameterized queries
-- **Global Exception Handling** — No stack traces exposed to clients
+## 🔒 Security
 
-## 🔧 Configuration
+- **BCrypt** — passwords hashed before storage, never stored in plain text
+- **JWT via HttpOnly cookie** — token inaccessible to JavaScript, protects against XSS
+- **Spring Security filter** — every `/api/*` request (except auth endpoints) validated against JWT cookie
+- **CORS** — only `localhost:4200` and `localhost:8080` allowed in development
+- **Input Validation** — Jakarta Bean Validation on all request DTOs
+- **No stack traces** — GlobalExceptionHandler returns clean JSON errors only
 
-Key settings in `application.properties`:
+---
 
-| Property | Value | Description |
-|----------|-------|-------------|
-| `server.port` | 8080 | Server port |
-| `spring.jpa.hibernate.ddl-auto` | update | Auto-create/update tables |
-| `spring.jpa.show-sql` | true | Print SQL to console |
-| `jwt.expiration` | 86400000 | Token expiry (24 hours) |
+## ⚙️ Configuration
 
-## 📌 Key Learnings Demonstrated
+`backend/src/main/resources/application.properties`:
 
-- **Layered Architecture** — Controller → Service → Repository separation
-- **ORM with Hibernate** — Entity mapping, relationships, JPQL queries
-- **DTO Pattern** — Separate API shape from database entities
-- **Dependency Injection** — Constructor-based injection throughout
-- **Validation** — Declarative validation with custom error handling
-- **Testing** — Integration tests with MockMvc and Spring Boot Test
-- **Database Design** — Foreign keys, enums, timestamps, constraints
+| Property | Default | Description |
+|----------|---------|-------------|
+| `server.port` | `8080` | Server port |
+| `spring.jpa.hibernate.ddl-auto` | `none` | Schema management — `none` to protect data |
+| `spring.jpa.show-sql` | `true` | Print SQL in console |
+| `jwt.secret` | (set in properties) | JWT signing secret |
+| `jwt.expiration` | `86400000` | Token expiry in ms (24 hours) |
+
+> **Important**: Set `spring.jpa.hibernate.ddl-auto=none` to prevent Hibernate from dropping your tables on restart. Run the schema SQL once manually, then leave it on `none`.
+
+---
+
+## ☁️ Deployment (Railway)
+
+1. Push to GitHub
+2. Create a new project on [railway.app](https://railway.app)
+3. Add a MySQL database service
+4. Set environment variables:
+   ```
+   SPRING_DATASOURCE_URL=jdbc:mysql://...
+   SPRING_DATASOURCE_USERNAME=root
+   SPRING_DATASOURCE_PASSWORD=...
+   JWT_SECRET=your-strong-secret-here
+   JWT_EXPIRATION=86400000
+   ```
+5. Railway auto-deploys on every push to `main`
+
+---
 
 ## 🗺 Roadmap
 
-- [x] REST API (CRUD for users, categories, transactions)
-- [x] Dashboard analytics (SUM, GROUP BY)
-- [x] Integration tests (21 tests)
+- [x] REST API — CRUD for users, categories, transactions
+- [x] Dashboard analytics — SUM, GROUP BY queries
+- [x] Integration tests — 21 tests
 - [x] BCrypt password hashing
-- [ ] JWT token authentication (in progress)
-- [ ] Ember.js frontend with charts
+- [x] JWT authentication via HttpOnly cookies
+- [x] Ember.js frontend — login, register, dashboard, transactions, categories
+- [x] Frontend served from Spring Boot (single server, one port)
+- [x] Month filter on dashboard
 - [ ] CSV export
 - [ ] Budget alerts
 - [ ] Docker deployment
+- [ ] Password reset flow

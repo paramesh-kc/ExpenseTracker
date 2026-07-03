@@ -4,11 +4,17 @@ import { action } from '@ember/object';
 
 export default class NavBarComponent extends Component {
   @service auth;
+  @service api;
   @service router;
 
   @action
-  logout() {
-    this.auth.logout();
+  async logout() {
+    try {
+      await this.api.logout();     // Server deletes the cookie
+    } catch (e) {
+      // logout anyway even if API fails
+    }
+    this.auth.logout();            // Clear local display info
     this.router.transitionTo('login');
   }
 

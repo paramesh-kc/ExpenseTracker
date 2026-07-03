@@ -37,7 +37,7 @@ export default class RegisterController extends Controller {
 
     try {
       const json = await this.store.ajax(
-        'http://localhost:8080/api/auth/register',
+        `${ENV.APP.API_HOST}/api/auth/register`,
         {
           type: 'POST',
           contentType: 'application/json',

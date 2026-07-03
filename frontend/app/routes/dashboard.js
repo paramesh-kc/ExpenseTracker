@@ -23,4 +23,11 @@ export default class DashboardRoute extends Route {
         byCategory: [], dailyExpenses: [] };
     }
   }
+  setupController(controller, model) {
+    super.setupController(controller, model);
+    const now = new Date();
+    controller.selectedMonth = now.getMonth() + 1;
+    controller.selectedDate = now;
+    controller.dashboardData = null; // clear any cached filter data
+  }
 }

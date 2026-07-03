@@ -2,8 +2,10 @@ package com.expensetracker.controller;
 
 import com.expensetracker.dto.DashboardDTO;
 import com.expensetracker.service.DashboardService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDate;
 
 @RestController
@@ -18,9 +20,11 @@ public class DashboardController {
 
     @GetMapping("/summary")
     public ResponseEntity<DashboardDTO> getSummary(
-            @RequestParam(defaultValue = "1") Long userId,
+            HttpServletRequest request,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Integer year) {
+
+        Long userId = (Long) request.getAttribute("userId");
         if (month == null) month = LocalDate.now().getMonthValue();
         if (year == null) year = LocalDate.now().getYear();
 

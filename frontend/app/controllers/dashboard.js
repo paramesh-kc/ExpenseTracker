@@ -54,7 +54,7 @@ export default class DashboardController extends Controller {
       console.log("e.target.value", e.target.value);
       const year = new Date().getFullYear();
       console.log("year", year);
-      this.selectedMonth = e.target.value;
+      this.selectedMonth = Number(e.target.value);
       this.dashboardData = await this.api.getDashboard(
         e.target.value,
         year

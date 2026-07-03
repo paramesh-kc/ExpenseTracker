@@ -4,7 +4,7 @@ module.exports = function (environment) {
     modulePrefix: 'frontend',
     environment,
     rootURL: '/',
-    locationType: 'history',
+    locationType: 'hash',
     EmberENV: {
     EXTEND_PROTOTYPES: false,
     FEATURES: {},
@@ -13,8 +13,20 @@ module.exports = function (environment) {
     API_HOST: 'http://localhost:8080',
   },
   };
+  if (environment === 'development') {
+    ENV.APP.LOG_RESOLVER = true;
+  }
+  if (environment === 'test') {
+    ENV.rootURL = '/';
+    ENV.locationType = 'none';
+    ENV.APP.LOG_ACTIVE_GENERATION = false;
+    ENV.APP.LOG_VIEW_LOOKUPS = false;
+    ENV.APP.rootElement = '#ember-testing';
+    ENV.APP.autoboot = false;
+  }
+
   if (environment === 'production') {
-    ENV.APP.API_HOST = 'https://api.yourapp.com';
+    ENV.APP.API_HOST = '';
   }
   return ENV;
 };

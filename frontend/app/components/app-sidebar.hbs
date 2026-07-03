@@ -27,3 +27,37 @@
     </button>
   </div>
 </div>
+
+{{!-- Mobile top bar --}}
+<div class="mobile-top-bar">
+  <div class="mobile-brand">
+    <i class="ti ti-wallet" aria-hidden="true"></i>
+    <span>Expense tracker</span>
+  </div>
+  <div class="mobile-user">
+    <div class="mobile-avatar">{{this.initials}}</div>
+    <button type="button" class="mobile-logout-btn" {{on "click" this.auth.logout}}>
+      Logout
+    </button>
+  </div>
+</div>
+
+{{!-- Bottom navigation --}}
+<nav class="bottom-nav" aria-label="Mobile navigation">
+  <LinkTo @route="dashboard" class="bottom-nav-item" activeClass="active">
+    <i class="ti ti-layout-dashboard" aria-hidden="true"></i>
+    <span>Dashboard</span>
+  </LinkTo>
+  <LinkTo @route="transactions" class="bottom-nav-item" activeClass="active">
+    <i class="ti ti-arrows-exchange" aria-hidden="true"></i>
+    <span>Transactions</span>
+  </LinkTo>
+  <LinkTo @route="categories" class="bottom-nav-item" activeClass="active">
+    <i class="ti ti-tags" aria-hidden="true"></i>
+    <span>Categories</span>
+  </LinkTo>
+  <button type="button" class="bottom-nav-item" {{on "click" this.auth.logout}}>
+    <i class="ti ti-logout" aria-hidden="true"></i>
+    <span>Logout</span>
+  </button>
+</nav>

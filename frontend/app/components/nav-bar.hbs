@@ -1,8 +1,6 @@
 <nav class="navbar">
   <div class="nav-brand">
-    <LinkTo @route="dashboard" class="brand">
-      <span>ExpenseTracker</span>
-    </LinkTo>
+    <LinkTo @route="dashboard" class="brand">ExpenseTracker</LinkTo>
   </div>
   <div class="nav-links">
     <a href="/dashboard" class="nav-link" {{on "click" (fn this.navigate "dashboard")}}>Dashboard</a>
@@ -11,6 +9,26 @@
   </div>
   <div class="nav-user">
     <span class="user-name">{{this.auth.name}}</span>
-    <button type="button" class="btn btn-logout" {{on "click" this.logout}}>Logout</button>
+    <button class="btn btn-logout" {{on "click" this.logout}}>Logout</button>
   </div>
 </nav>
+
+{{!-- Bottom Tab Bar (visible only on mobile via CSS) --}}
+<div class="bottom-nav">
+  <a href="/dashboard" class="bottom-nav-item" {{on "click" (fn this.navigate "dashboard")}}>
+    <i class="ti ti-chart-bar" aria-hidden="true"></i>
+    Dashboard
+  </a>
+  <a href="/transactions" class="bottom-nav-item" {{on "click" (fn this.navigate "transactions")}}>
+    <i class="ti ti-list" aria-hidden="true"></i>
+    Transactions
+  </a>
+  <a href="/categories" class="bottom-nav-item" {{on "click" (fn this.navigate "categories")}}>
+    <i class="ti ti-tag" aria-hidden="true"></i>
+    Categories
+  </a>
+  <a href="#" class="bottom-nav-item" {{on "click" this.logout}}>
+    <i class="ti ti-logout" aria-hidden="true"></i>
+    Logout
+  </a>
+</div>

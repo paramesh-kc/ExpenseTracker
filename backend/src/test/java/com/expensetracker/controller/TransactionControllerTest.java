@@ -10,6 +10,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import jakarta.servlet.http.Cookie;
 
 import java.time.LocalDate;
 
@@ -28,30 +30,51 @@ public class TransactionControllerTest extends TestCleanup {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Test
-    @Order(1)
-    @DisplayName("Setup - create user and category")
+    private Long userId;
+    private Long categoryId;
+    private Long transactionId;
+    private String jwtToken; 
+
+    @BeforeAll
     void setup() throws Exception {
+        // register user
         RegisterRequest user = new RegisterRequest();
         user.setName("TxnTestUser");
         user.setEmail("txntest@example.com");
         user.setPassword("password123");
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(user)));
 
+        MvcResult userResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String userResponse = userResult.getResponse().getContentAsString();
+        userId = objectMapper.readTree(userResponse).get("userId").asLong();
+        jwtToken = userResult.getResponse().getCookie("token").getValue();
+        System.out.println("=== JWT TOKEN: " + jwtToken + " ===");
+
+        // create category
         CategoryDTO category = new CategoryDTO();
         category.setName("TestFood");
         category.setIcon("🍔");
         category.setColor("#FF0000");
         category.setType(TransactionType.EXPENSE);
-        mockMvc.perform(post("/api/categories").param("userId", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(category)));
+
+        MvcResult catResult = mockMvc.perform(post("/api/categories")
+                        .cookie(new Cookie("token", jwtToken))
+                        .param("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(category)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String catResponse = catResult.getResponse().getContentAsString();
+        categoryId = objectMapper.readTree(catResponse).get("id").asLong();
     }
 
     @Test
-    @Order(2)
+    @Order(1)
     @DisplayName("Create transaction - should succeed")
     void testCreateTransaction() throws Exception {
         TransactionDTO dto = new TransactionDTO();
@@ -59,59 +82,73 @@ public class TransactionControllerTest extends TestCleanup {
         dto.setType(TransactionType.EXPENSE);
         dto.setNote("Lunch");
         dto.setDate(LocalDate.of(2025, 7, 15));
-        dto.setCategoryId(1L);
+        dto.setCategoryId(categoryId);
 
-        mockMvc.perform(post("/api/transactions").param("userId", "1")
+        MvcResult result = mockMvc.perform(post("/api/transactions")
+                        .cookie(new Cookie("token", jwtToken))
+                        .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.amount").value(500.0))
-                .andExpect(jsonPath("$.note").value("Lunch"));
+                .andExpect(jsonPath("$.note").value("Lunch"))
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        transactionId = objectMapper.readTree(response).get("id").asLong();
     }
 
     @Test
-    @Order(3)
+    @Order(2)
     @DisplayName("Create transaction - should fail without amount")
     void testCreateTransactionNoAmount() throws Exception {
         TransactionDTO dto = new TransactionDTO();
         dto.setType(TransactionType.EXPENSE);
         dto.setDate(LocalDate.of(2025, 7, 15));
-        dto.setCategoryId(1L);
+        dto.setCategoryId(categoryId);
 
-        mockMvc.perform(post("/api/transactions").param("userId", "1")
+        mockMvc.perform(post("/api/transactions")
+                        .cookie(new Cookie("token", jwtToken))
+                        .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @Order(4)
+    @Order(3)
     @DisplayName("List transactions - should return transactions")
     void testListTransactions() throws Exception {
-        mockMvc.perform(get("/api/transactions").param("userId", "1"))
+        mockMvc.perform(get("/api/transactions")
+                        .cookie(new Cookie("token", jwtToken))
+                        .param("userId", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
 
     @Test
-    @Order(5)
+    @Order(4)
     @DisplayName("Get single transaction - should succeed")
     void testGetTransaction() throws Exception {
-        mockMvc.perform(get("/api/transactions/1").param("userId", "1"))
+        mockMvc.perform(get("/api/transactions/" + transactionId)
+                        .cookie(new Cookie("token", jwtToken))
+                        .param("userId", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.amount").value(500.0));
     }
 
     @Test
-    @Order(6)
+    @Order(5)
     @DisplayName("Get non-existent transaction - should return 404")
     void testGetTransactionNotFound() throws Exception {
-        mockMvc.perform(get("/api/transactions/999").param("userId", "1"))
+        mockMvc.perform(get("/api/transactions/999999")
+                        .cookie(new Cookie("token", jwtToken))
+                        .param("userId", userId.toString()))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @Order(7)
+    @Order(6)
     @DisplayName("Update transaction - should succeed")
     void testUpdateTransaction() throws Exception {
         TransactionDTO dto = new TransactionDTO();
@@ -119,9 +156,11 @@ public class TransactionControllerTest extends TestCleanup {
         dto.setType(TransactionType.EXPENSE);
         dto.setNote("Dinner updated");
         dto.setDate(LocalDate.of(2025, 7, 15));
-        dto.setCategoryId(1L);
+        dto.setCategoryId(categoryId);
 
-        mockMvc.perform(put("/api/transactions/1").param("userId", "1")
+        mockMvc.perform(put("/api/transactions/" + transactionId)
+                        .cookie(new Cookie("token", jwtToken))
+                        .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -130,10 +169,12 @@ public class TransactionControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(8)
+    @Order(7)
     @DisplayName("Delete transaction - should succeed")
     void testDeleteTransaction() throws Exception {
-        mockMvc.perform(delete("/api/transactions/1").param("userId", "1"))
+        mockMvc.perform(delete("/api/transactions/" + transactionId)
+                        .cookie(new Cookie("token", jwtToken))
+                        .param("userId", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Transaction deleted"));
     }

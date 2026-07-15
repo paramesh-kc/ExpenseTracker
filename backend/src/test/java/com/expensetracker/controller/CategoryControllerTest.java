@@ -12,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import jakarta.servlet.http.Cookie; 
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -29,10 +30,10 @@ public class CategoryControllerTest extends TestCleanup {
     private ObjectMapper objectMapper;
 
     private Long userId;
+    private Long categoryId;
+    private String jwtToken; 
 
-    @Test
-    @Order(1)
-    @DisplayName("Setup - register a user")
+    @BeforeAll
     void setupUser() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setName("CatTestUser");
@@ -45,12 +46,19 @@ public class CategoryControllerTest extends TestCleanup {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        // User ID will be 1 since we cleaned the DB
-        userId = 1L;
+        String response = result.getResponse().getContentAsString();
+        System.out.println("=== REGISTER RESPONSE: " + response + " ===");
+
+        userId = objectMapper.readTree(response).get("userId").asLong();
+        System.out.println("=== USER ID: " + userId + " ===");
+
+        jwtToken = result.getResponse().getCookie("token").getValue();
+        System.out.println("=== JWT TOKEN: " + jwtToken + " ===");
+
     }
 
     @Test
-    @Order(2)
+    @Order(1)
     @DisplayName("Create category - should succeed")
     void testCreateCategory() throws Exception {
         CategoryDTO dto = new CategoryDTO();
@@ -59,22 +67,28 @@ public class CategoryControllerTest extends TestCleanup {
         dto.setColor("#FF5733");
         dto.setType(TransactionType.EXPENSE);
 
-        mockMvc.perform(post("/api/categories")
+        MvcResult result = mockMvc.perform(post("/api/categories")
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.name").value("Food"));
+                .andExpect(jsonPath("$.name").value("Food"))
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        categoryId = objectMapper.readTree(response).get("id").asLong();
     }
 
     @Test
-    @Order(3)
+    @Order(2)
     @DisplayName("Create category - should fail without name")
     void testCreateCategoryNoName() throws Exception {
         CategoryDTO dto = new CategoryDTO();
         dto.setType(TransactionType.EXPENSE);
 
         mockMvc.perform(post("/api/categories")
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -82,10 +96,11 @@ public class CategoryControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(4)
+    @Order(3)
     @DisplayName("List categories - should return categories")
     void testListCategories() throws Exception {
         mockMvc.perform(get("/api/categories")
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray())
@@ -93,10 +108,11 @@ public class CategoryControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(5)
+    @Order(4)
     @DisplayName("Delete category - should succeed")
     void testDeleteCategory() throws Exception {
-        mockMvc.perform(delete("/api/categories/1")
+        mockMvc.perform(delete("/api/categories/" + categoryId)
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Category deleted"));

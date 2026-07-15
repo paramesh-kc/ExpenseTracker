@@ -1,0 +1,98 @@
+name: CI — Test and Build
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  # ── JOB 1: Run Backend Tests ──────────────────────────────
+  test:
+    name: Run Backend Tests
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: expense_tracker_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Make gradlew executable
+        run: chmod +x backend/gradlew
+
+      - name: Run tests
+        working-directory: backend
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/expense_tracker_test
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: root
+          SPRING_JPA_DDL_AUTO: create-drop
+          JWT_SECRET: TestSecretKeyForCIOnlyNotProduction256Bits
+          JWT_EXPIRATION: 86400000
+        run: ./gradlew test
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-report
+          path: backend/build/reports/tests/test/
+
+  # ── JOB 2: Build Frontend ─────────────────────────────────
+  build-frontend:
+    name: Build Ember Frontend
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Ember production
+        working-directory: frontend
+        run: npx ember build --environment=production
+
+      - name: Copy frontend to Spring Boot static
+        run: |
+          rm -rf backend/src/main/resources/static/*
+          cp -r frontend/dist/* backend/src/main/resources/static/
+
+      - name: Commit built frontend
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/src/main/resources/static/
+          git diff --staged --quiet || git commit -m "ci: update frontend build [skip ci]"
+          git push

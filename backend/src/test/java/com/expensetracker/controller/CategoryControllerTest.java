@@ -2,7 +2,6 @@ package com.expensetracker.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.expensetracker.TestCleanup;
-import com.expensetracker.TestSecurityConfig;
 import com.expensetracker.dto.CategoryDTO;
 import com.expensetracker.dto.RegisterRequest;
 import com.expensetracker.model.TransactionType;
@@ -19,8 +18,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
-@Import(TestSecurityConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class CategoryControllerTest extends TestCleanup {

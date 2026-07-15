@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import jakarta.servlet.http.Cookie;
 
 import java.time.LocalDate;
 
@@ -18,7 +19,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DashboardControllerTest extends TestCleanup {
@@ -32,6 +33,8 @@ public class DashboardControllerTest extends TestCleanup {
     private Long userId;
     private Long salaryCategId;
     private Long foodCategId;
+    private String jwtToken; 
+
 
     @BeforeAll
     void setup() throws Exception {
@@ -50,6 +53,8 @@ public class DashboardControllerTest extends TestCleanup {
 
         String userResponse = userResult.getResponse().getContentAsString();
         userId = objectMapper.readTree(userResponse).get("userId").asLong();
+        jwtToken = userResult.getResponse().getCookie("token").getValue();
+        System.out.println("=== JWT TOKEN: " + jwtToken + " ===");
 
         // create Salary category (INCOME)
         CategoryDTO salary = new CategoryDTO();
@@ -59,6 +64,7 @@ public class DashboardControllerTest extends TestCleanup {
         salary.setType(TransactionType.INCOME);
 
         MvcResult salaryResult = mockMvc.perform(post("/api/categories")
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(salary)))
@@ -76,6 +82,7 @@ public class DashboardControllerTest extends TestCleanup {
         food.setType(TransactionType.EXPENSE);
 
         MvcResult foodResult = mockMvc.perform(post("/api/categories")
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(food)))
@@ -94,6 +101,7 @@ public class DashboardControllerTest extends TestCleanup {
         salaryTxn.setCategoryId(salaryCategId);
 
         mockMvc.perform(post("/api/transactions")
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(salaryTxn)))
@@ -108,6 +116,7 @@ public class DashboardControllerTest extends TestCleanup {
         foodTxn.setCategoryId(foodCategId);
 
         mockMvc.perform(post("/api/transactions")
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(foodTxn)))
@@ -119,6 +128,7 @@ public class DashboardControllerTest extends TestCleanup {
     @DisplayName("Dashboard summary - should return correct totals")
     void testDashboardSummary() throws Exception {
         mockMvc.perform(get("/api/dashboard/summary")
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString())
                         .param("month", "7")
                         .param("year", "2025"))
@@ -135,6 +145,7 @@ public class DashboardControllerTest extends TestCleanup {
     @DisplayName("Dashboard summary - empty month should return zeros")
     void testDashboardEmptyMonth() throws Exception {
         mockMvc.perform(get("/api/dashboard/summary")
+                        .cookie(new Cookie("token", jwtToken))
                         .param("userId", userId.toString())
                         .param("month", "1")
                         .param("year", "2020"))

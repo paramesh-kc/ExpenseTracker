@@ -30,7 +30,8 @@ public class DashboardControllerTest extends TestCleanup {
     private ObjectMapper objectMapper;
 
     @Test
-    @Order(1)
+//     @Order(1)
+    @BeforeAll 
     @DisplayName("Setup - create user, categories, and transactions")
     void setup() throws Exception {
         // Register
@@ -86,7 +87,7 @@ public class DashboardControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(2)
+    @Order(1)
     @DisplayName("Dashboard summary - should return correct totals")
     void testDashboardSummary() throws Exception {
         mockMvc.perform(get("/api/dashboard/summary")
@@ -102,7 +103,7 @@ public class DashboardControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(3)
+    @Order(2)
     @DisplayName("Dashboard summary - empty month should return zeros")
     void testDashboardEmptyMonth() throws Exception {
         mockMvc.perform(get("/api/dashboard/summary")

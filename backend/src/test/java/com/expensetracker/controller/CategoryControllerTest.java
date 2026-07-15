@@ -32,7 +32,8 @@ public class CategoryControllerTest extends TestCleanup {
     private Long userId;
 
     @Test
-    @Order(1)
+    // @Order(1)
+    @BeforeAll
     @DisplayName("Setup - register a user")
     void setupUser() throws Exception {
         RegisterRequest request = new RegisterRequest();
@@ -51,7 +52,7 @@ public class CategoryControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(2)
+    @Order(1)
     @DisplayName("Create category - should succeed")
     void testCreateCategory() throws Exception {
         CategoryDTO dto = new CategoryDTO();
@@ -83,7 +84,7 @@ public class CategoryControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(4)
+    @Order(2)
     @DisplayName("List categories - should return categories")
     void testListCategories() throws Exception {
         mockMvc.perform(get("/api/categories")
@@ -94,7 +95,7 @@ public class CategoryControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(5)
+    @Order(3)
     @DisplayName("Delete category - should succeed")
     void testDeleteCategory() throws Exception {
         mockMvc.perform(delete("/api/categories/1")

@@ -30,7 +30,8 @@ public class TransactionControllerTest extends TestCleanup {
     private ObjectMapper objectMapper;
 
     @Test
-    @Order(1)
+    // @Order(1)
+    @BeforeAll 
     @DisplayName("Setup - create user and category")
     void setup() throws Exception {
         RegisterRequest user = new RegisterRequest();
@@ -52,7 +53,7 @@ public class TransactionControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(2)
+    @Order(1)
     @DisplayName("Create transaction - should succeed")
     void testCreateTransaction() throws Exception {
         TransactionDTO dto = new TransactionDTO();
@@ -71,7 +72,7 @@ public class TransactionControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(3)
+    @Order(2)
     @DisplayName("Create transaction - should fail without amount")
     void testCreateTransactionNoAmount() throws Exception {
         TransactionDTO dto = new TransactionDTO();
@@ -86,7 +87,7 @@ public class TransactionControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(4)
+    @Order(3)
     @DisplayName("List transactions - should return transactions")
     void testListTransactions() throws Exception {
         mockMvc.perform(get("/api/transactions").param("userId", "1"))
@@ -95,7 +96,7 @@ public class TransactionControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(5)
+    @Order(4)
     @DisplayName("Get single transaction - should succeed")
     void testGetTransaction() throws Exception {
         mockMvc.perform(get("/api/transactions/1").param("userId", "1"))
@@ -104,7 +105,7 @@ public class TransactionControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(6)
+    @Order(5)
     @DisplayName("Get non-existent transaction - should return 404")
     void testGetTransactionNotFound() throws Exception {
         mockMvc.perform(get("/api/transactions/999").param("userId", "1"))
@@ -112,7 +113,7 @@ public class TransactionControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(7)
+    @Order(6)
     @DisplayName("Update transaction - should succeed")
     void testUpdateTransaction() throws Exception {
         TransactionDTO dto = new TransactionDTO();
@@ -131,7 +132,7 @@ public class TransactionControllerTest extends TestCleanup {
     }
 
     @Test
-    @Order(8)
+    @Order(7)
     @DisplayName("Delete transaction - should succeed")
     void testDeleteTransaction() throws Exception {
         mockMvc.perform(delete("/api/transactions/1").param("userId", "1"))

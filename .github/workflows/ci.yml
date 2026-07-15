@@ -2,9 +2,9 @@ name: CI — Test and Build
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
+    branches: ['**']
 
 jobs:
   # ── JOB 1: Run Backend Tests ──────────────────────────────

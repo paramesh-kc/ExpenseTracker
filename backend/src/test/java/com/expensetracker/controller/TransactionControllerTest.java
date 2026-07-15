@@ -8,9 +8,9 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDate;
 
@@ -29,27 +29,43 @@ public class TransactionControllerTest extends TestCleanup {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Test
-    // @Order(1)
-    @BeforeAll 
-    @DisplayName("Setup - create user and category")
+    private Long userId;
+    private Long categoryId;
+    private Long transactionId;
+
+    @BeforeAll
     void setup() throws Exception {
+        // register user
         RegisterRequest user = new RegisterRequest();
         user.setName("TxnTestUser");
         user.setEmail("txntest@example.com");
         user.setPassword("password123");
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(user)));
 
+        MvcResult userResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String userResponse = userResult.getResponse().getContentAsString();
+        userId = objectMapper.readTree(userResponse).get("userId").asLong();
+
+        // create category
         CategoryDTO category = new CategoryDTO();
         category.setName("TestFood");
         category.setIcon("🍔");
         category.setColor("#FF0000");
         category.setType(TransactionType.EXPENSE);
-        mockMvc.perform(post("/api/categories").param("userId", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(category)));
+
+        MvcResult catResult = mockMvc.perform(post("/api/categories")
+                        .param("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(category)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String catResponse = catResult.getResponse().getContentAsString();
+        categoryId = objectMapper.readTree(catResponse).get("id").asLong();
     }
 
     @Test
@@ -61,14 +77,19 @@ public class TransactionControllerTest extends TestCleanup {
         dto.setType(TransactionType.EXPENSE);
         dto.setNote("Lunch");
         dto.setDate(LocalDate.of(2025, 7, 15));
-        dto.setCategoryId(1L);
+        dto.setCategoryId(categoryId);
 
-        mockMvc.perform(post("/api/transactions").param("userId", "1")
+        MvcResult result = mockMvc.perform(post("/api/transactions")
+                        .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.amount").value(500.0))
-                .andExpect(jsonPath("$.note").value("Lunch"));
+                .andExpect(jsonPath("$.note").value("Lunch"))
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        transactionId = objectMapper.readTree(response).get("id").asLong();
     }
 
     @Test
@@ -78,9 +99,10 @@ public class TransactionControllerTest extends TestCleanup {
         TransactionDTO dto = new TransactionDTO();
         dto.setType(TransactionType.EXPENSE);
         dto.setDate(LocalDate.of(2025, 7, 15));
-        dto.setCategoryId(1L);
+        dto.setCategoryId(categoryId);
 
-        mockMvc.perform(post("/api/transactions").param("userId", "1")
+        mockMvc.perform(post("/api/transactions")
+                        .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest());
@@ -90,7 +112,8 @@ public class TransactionControllerTest extends TestCleanup {
     @Order(3)
     @DisplayName("List transactions - should return transactions")
     void testListTransactions() throws Exception {
-        mockMvc.perform(get("/api/transactions").param("userId", "1"))
+        mockMvc.perform(get("/api/transactions")
+                        .param("userId", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
     }
@@ -99,7 +122,8 @@ public class TransactionControllerTest extends TestCleanup {
     @Order(4)
     @DisplayName("Get single transaction - should succeed")
     void testGetTransaction() throws Exception {
-        mockMvc.perform(get("/api/transactions/1").param("userId", "1"))
+        mockMvc.perform(get("/api/transactions/" + transactionId)
+                        .param("userId", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.amount").value(500.0));
     }
@@ -108,7 +132,8 @@ public class TransactionControllerTest extends TestCleanup {
     @Order(5)
     @DisplayName("Get non-existent transaction - should return 404")
     void testGetTransactionNotFound() throws Exception {
-        mockMvc.perform(get("/api/transactions/999").param("userId", "1"))
+        mockMvc.perform(get("/api/transactions/999999")
+                        .param("userId", userId.toString()))
                 .andExpect(status().isNotFound());
     }
 
@@ -121,9 +146,10 @@ public class TransactionControllerTest extends TestCleanup {
         dto.setType(TransactionType.EXPENSE);
         dto.setNote("Dinner updated");
         dto.setDate(LocalDate.of(2025, 7, 15));
-        dto.setCategoryId(1L);
+        dto.setCategoryId(categoryId);
 
-        mockMvc.perform(put("/api/transactions/1").param("userId", "1")
+        mockMvc.perform(put("/api/transactions/" + transactionId)
+                        .param("userId", userId.toString())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -135,7 +161,8 @@ public class TransactionControllerTest extends TestCleanup {
     @Order(7)
     @DisplayName("Delete transaction - should succeed")
     void testDeleteTransaction() throws Exception {
-        mockMvc.perform(delete("/api/transactions/1").param("userId", "1"))
+        mockMvc.perform(delete("/api/transactions/" + transactionId)
+                        .param("userId", userId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Transaction deleted"));
     }

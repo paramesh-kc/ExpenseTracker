@@ -8,9 +8,9 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import java.time.LocalDate;
 
@@ -29,61 +29,89 @@ public class DashboardControllerTest extends TestCleanup {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Test
-//     @Order(1)
-    @BeforeAll 
-    @DisplayName("Setup - create user, categories, and transactions")
+    private Long userId;
+    private Long salaryCategId;
+    private Long foodCategId;
+
+    @BeforeAll
     void setup() throws Exception {
-        // Register
+
+        // register user
         RegisterRequest user = new RegisterRequest();
         user.setName("DashUser");
         user.setEmail("dashtest@example.com");
         user.setPassword("password123");
-        mockMvc.perform(post("/api/auth/register")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(user)));
 
-        // Category: Salary (INCOME) → id=1
+        MvcResult userResult = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String userResponse = userResult.getResponse().getContentAsString();
+        userId = objectMapper.readTree(userResponse).get("userId").asLong();
+
+        // create Salary category (INCOME)
         CategoryDTO salary = new CategoryDTO();
         salary.setName("Salary");
         salary.setIcon("💰");
         salary.setColor("#27AE60");
         salary.setType(TransactionType.INCOME);
-        mockMvc.perform(post("/api/categories").param("userId", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(salary)));
 
-        // Category: Food (EXPENSE) → id=2
+        MvcResult salaryResult = mockMvc.perform(post("/api/categories")
+                        .param("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(salary)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String salaryResponse = salaryResult.getResponse().getContentAsString();
+        salaryCategId = objectMapper.readTree(salaryResponse).get("id").asLong();
+
+        // create Food category (EXPENSE)
         CategoryDTO food = new CategoryDTO();
         food.setName("Food");
         food.setIcon("🍔");
         food.setColor("#FF5733");
         food.setType(TransactionType.EXPENSE);
-        mockMvc.perform(post("/api/categories").param("userId", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(food)));
 
-        // Transaction: Salary income
+        MvcResult foodResult = mockMvc.perform(post("/api/categories")
+                        .param("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(food)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        String foodResponse = foodResult.getResponse().getContentAsString();
+        foodCategId = objectMapper.readTree(foodResponse).get("id").asLong();
+
+        // create salary transaction (INCOME)
         TransactionDTO salaryTxn = new TransactionDTO();
         salaryTxn.setAmount(75000.0);
         salaryTxn.setType(TransactionType.INCOME);
         salaryTxn.setNote("Monthly salary");
         salaryTxn.setDate(LocalDate.of(2025, 7, 1));
-        salaryTxn.setCategoryId(1L);
-        mockMvc.perform(post("/api/transactions").param("userId", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(salaryTxn)));
+        salaryTxn.setCategoryId(salaryCategId);
 
-        // Transaction: Food expense
+        mockMvc.perform(post("/api/transactions")
+                        .param("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(salaryTxn)))
+                .andExpect(status().isCreated());
+
+        // create food transaction (EXPENSE)
         TransactionDTO foodTxn = new TransactionDTO();
         foodTxn.setAmount(500.0);
         foodTxn.setType(TransactionType.EXPENSE);
         foodTxn.setNote("Lunch");
         foodTxn.setDate(LocalDate.of(2025, 7, 15));
-        foodTxn.setCategoryId(2L);
-        mockMvc.perform(post("/api/transactions").param("userId", "1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(foodTxn)));
+        foodTxn.setCategoryId(foodCategId);
+
+        mockMvc.perform(post("/api/transactions")
+                        .param("userId", userId.toString())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(foodTxn)))
+                .andExpect(status().isCreated());
     }
 
     @Test
@@ -91,7 +119,7 @@ public class DashboardControllerTest extends TestCleanup {
     @DisplayName("Dashboard summary - should return correct totals")
     void testDashboardSummary() throws Exception {
         mockMvc.perform(get("/api/dashboard/summary")
-                        .param("userId", "1")
+                        .param("userId", userId.toString())
                         .param("month", "7")
                         .param("year", "2025"))
                 .andExpect(status().isOk())
@@ -107,7 +135,7 @@ public class DashboardControllerTest extends TestCleanup {
     @DisplayName("Dashboard summary - empty month should return zeros")
     void testDashboardEmptyMonth() throws Exception {
         mockMvc.perform(get("/api/dashboard/summary")
-                        .param("userId", "1")
+                        .param("userId", userId.toString())
                         .param("month", "1")
                         .param("year", "2020"))
                 .andExpect(status().isOk())
